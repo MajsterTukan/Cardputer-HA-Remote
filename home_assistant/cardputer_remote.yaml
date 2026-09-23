@@ -1,0 +1,172 @@
+automation:
+  - id: cardputer_remote_handle_command
+    alias: "Cardputer - wykonaj polecenie"
+    mode: queued
+    max: 10
+    trigger:
+      - platform: mqtt
+        topic: "home/cardputer/command"
+    variables:
+      entity_id: >-
+        {{ trigger.payload_json.entity_id
+            if trigger.payload_json is defined and trigger.payload_json.entity_id is defined
+            else '' }}
+      command: >-
+        {{ trigger.payload_json.command
+            if trigger.payload_json is defined and trigger.payload_json.command is defined
+            else '' }}
+    condition:
+      - condition: template
+        value_template: >-
+          {{ entity_id in [
+            'light.salon_glowne',
+            'light.salon_led_tv',
+            'cover.salon_taras',
+            'sensor.salon_temperature',
+            'light.kuchnia_glowne',
+            'light.kuchnia_blat',
+            'cover.kuchnia',
+            'sensor.kuchnia_temperature',
+            'light.sypialnia_glowne',
+            'light.sypialnia_lampka',
+            'cover.sypialnia',
+            'sensor.sypialnia_temperature',
+            'light.korytarz',
+            'binary_sensor.korytarz_presence',
+            'scene.dobranoc',
+            'script.wszystko_off'
+          ] }}
+    action:
+      - choose:
+          - conditions: "{{ command == 'turn_on' and entity_id.startswith('light.') }}"
+            sequence:
+              - service: light.turn_on
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'turn_off' and entity_id.startswith('light.') }}"
+            sequence:
+              - service: light.turn_off
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'turn_on' and entity_id.startswith('switch.') }}"
+            sequence:
+              - service: switch.turn_on
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'turn_off' and entity_id.startswith('switch.') }}"
+            sequence:
+              - service: switch.turn_off
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'open' and entity_id.startswith('cover.') }}"
+            sequence:
+              - service: cover.open_cover
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'stop' and entity_id.startswith('cover.') }}"
+            sequence:
+              - service: cover.stop_cover
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'close' and entity_id.startswith('cover.') }}"
+            sequence:
+              - service: cover.close_cover
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'activate' and entity_id.startswith('scene.') }}"
+            sequence:
+              - service: scene.turn_on
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'activate' and entity_id.startswith('script.') }}"
+            sequence:
+              - service: script.turn_on
+                target:
+                  entity_id: "{{ entity_id }}"
+          - conditions: "{{ command == 'press' and entity_id.startswith('button.') }}"
+            sequence:
+              - service: button.press
+                target:
+                  entity_id: "{{ entity_id }}"
+
+  - id: cardputer_remote_publish_changes
+    alias: "Cardputer - publikuj zmiany stanow"
+    mode: queued
+    max: 20
+    trigger:
+      - platform: state
+        entity_id:
+          - 'light.salon_glowne'
+          - 'light.salon_led_tv'
+          - 'cover.salon_taras'
+          - 'sensor.salon_temperature'
+          - 'light.kuchnia_glowne'
+          - 'light.kuchnia_blat'
+          - 'cover.kuchnia'
+          - 'sensor.kuchnia_temperature'
+          - 'light.sypialnia_glowne'
+          - 'light.sypialnia_lampka'
+          - 'cover.sypialnia'
+          - 'sensor.sypialnia_temperature'
+          - 'light.korytarz'
+          - 'binary_sensor.korytarz_presence'
+          - 'scene.dobranoc'
+          - 'script.wszystko_off'
+    action:
+      - service: mqtt.publish
+        data:
+          topic: "home/cardputer/state/{{ trigger.entity_id }}"
+          qos: 1
+          retain: true
+          payload: >-
+            {{ {
+              'state': trigger.to_state.state if trigger.to_state is not none else 'unavailable',
+              'name': trigger.to_state.attributes.get('friendly_name', trigger.entity_id) if trigger.to_state is not none else trigger.entity_id,
+              'brightness': trigger.to_state.attributes.get('brightness') if trigger.to_state is not none else none,
+              'position': trigger.to_state.attributes.get('current_position') if trigger.to_state is not none else none,
+              'unit': trigger.to_state.attributes.get('unit_of_measurement') if trigger.to_state is not none else none
+            } | to_json }}
+
+  - id: cardputer_remote_publish_snapshot
+    alias: "Cardputer - publikuj pelny stan"
+    mode: restart
+    trigger:
+      - platform: homeassistant
+        event: start
+      - platform: mqtt
+        topic: "home/cardputer/request_state"
+    variables:
+      entities:
+          - 'light.salon_glowne'
+          - 'light.salon_led_tv'
+          - 'cover.salon_taras'
+          - 'sensor.salon_temperature'
+          - 'light.kuchnia_glowne'
+          - 'light.kuchnia_blat'
+          - 'cover.kuchnia'
+          - 'sensor.kuchnia_temperature'
+          - 'light.sypialnia_glowne'
+          - 'light.sypialnia_lampka'
+          - 'cover.sypialnia'
+          - 'sensor.sypialnia_temperature'
+          - 'light.korytarz'
+          - 'binary_sensor.korytarz_presence'
+          - 'scene.dobranoc'
+          - 'script.wszystko_off'
+    action:
+      - repeat:
+          for_each: "{{ entities }}"
+          sequence:
+            - service: mqtt.publish
+              data:
+                topic: "home/cardputer/state/{{ repeat.item }}"
+                qos: 1
+                retain: true
+                payload: >-
+                  {{ {
+                    'state': states(repeat.item),
+                    'name': state_attr(repeat.item, 'friendly_name') or repeat.item,
+                    'brightness': state_attr(repeat.item, 'brightness'),
+                    'position': state_attr(repeat.item, 'current_position'),
+                    'unit': state_attr(repeat.item, 'unit_of_measurement')
+                  } | to_json }}

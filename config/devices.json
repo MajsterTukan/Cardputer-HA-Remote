@@ -1,0 +1,100 @@
+{
+  "app_version": "0.2.0",
+  "project_url": "github.com/MajsterTukan",
+  "mqtt_base_topic": "home/cardputer",
+  "screen": {
+    "brightness": 110,
+    "sleep_after_seconds": 90,
+    "sound_feedback": true
+  },
+  "rooms": [
+    {
+      "name": "Salon",
+      "devices": [
+        {
+          "name": "Swiatlo glowne",
+          "entity_id": "light.salon_glowne",
+          "type": "light"
+        },
+        {
+          "name": "LED TV",
+          "entity_id": "light.salon_led_tv",
+          "type": "light"
+        },
+        {
+          "name": "Roleta taras",
+          "entity_id": "cover.salon_taras",
+          "type": "cover"
+        },
+        {
+          "name": "Temperatura",
+          "entity_id": "sensor.salon_temperature",
+          "type": "sensor",
+          "climate_role": "temperature"
+        }
+      ]
+    },
+    {
+      "name": "Kuchnia",
+      "devices": [
+        {
+          "name": "Swiatlo glowne",
+          "entity_id": "light.kuchnia_glowne",
+          "type": "light"
+        },
+        { "name": "Blat", "entity_id": "light.kuchnia_blat", "type": "light" },
+        { "name": "Roleta", "entity_id": "cover.kuchnia", "type": "cover" },
+        {
+          "name": "Temperatura",
+          "entity_id": "sensor.kuchnia_temperature",
+          "type": "sensor",
+          "climate_role": "temperature"
+        }
+      ]
+    },
+    {
+      "name": "Sypialnia",
+      "devices": [
+        {
+          "name": "Swiatlo glowne",
+          "entity_id": "light.sypialnia_glowne",
+          "type": "light"
+        },
+        {
+          "name": "Lampka",
+          "entity_id": "light.sypialnia_lampka",
+          "type": "light"
+        },
+        { "name": "Roleta", "entity_id": "cover.sypialnia", "type": "cover" },
+        {
+          "name": "Temperatura",
+          "entity_id": "sensor.sypialnia_temperature",
+          "type": "sensor",
+          "climate_role": "temperature"
+        }
+      ]
+    },
+    {
+      "name": "Korytarz",
+      "devices": [
+        { "name": "Swiatlo", "entity_id": "light.korytarz", "type": "light" },
+        {
+          "name": "Obecnosc",
+          "entity_id": "binary_sensor.korytarz_presence",
+          "type": "binary_sensor"
+        }
+      ]
+    },
+    {
+      "name": "Dom",
+      "devices": [
+        { "name": "Dobranoc", "entity_id": "scene.dobranoc", "type": "scene" },
+        {
+          "name": "Wszystko OFF",
+          "entity_id": "script.wszystko_off",
+          "type": "script"
+        }
+      ]
+    }
+  ]
+}
